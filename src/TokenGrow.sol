@@ -52,6 +52,7 @@ contract TokenGrow is ERC20 {
     mapping(address => uint[]) _myInvestmentId;
 
     /**
+     *function to create Investment
      *Each token minted is equated to 1$
      */
     function createInvestment(
@@ -131,6 +132,9 @@ contract TokenGrow is ERC20 {
         );
     }
 
+    /**
+     *To buy Investment
+     */
     function buyAnInvestment(
         uint _amount,
         uint _investmentId,
@@ -156,6 +160,10 @@ contract TokenGrow is ERC20 {
         _myInvestmentId[_investor].push(_investmentId);
     }
 
+    /**
+     *To get the investors investment
+     */
+
     function getYourInvestment(
         address _address
     ) public view returns (uint[] memory, uint[] memory) {
@@ -176,5 +184,20 @@ contract TokenGrow is ERC20 {
         return (totalAmountInvested, totalTokenPurchased);
     }
 
+    /**
+     * To withdraw the investment of each users
+     */
     function withDrawInvestment() public {}
+
+    /**
+     * To check The investment created by the investor
+     */
+
+    /**
+     * To withdraw The Money deposited by the investor for the business
+     */
+
+     /**
+     *To return the money wihdraw by the investor and the interest
+     */
 }
