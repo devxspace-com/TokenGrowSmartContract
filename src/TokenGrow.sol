@@ -187,7 +187,22 @@ contract TokenGrow is ERC20 {
     /**
      * To withdraw the investment of each users
      */
-    function withDrawInvestment() public {}
+    function withDrawInvestment(uint _investmentId, address _investorAddr) public {
+        Investment storage getProfit = investment[_investmentId];
+        uint amountDeposited = getProfit.amountInvested[_investorAddr];
+        uint tokenBought = getProfit.tokenPurchased[_investorAddr];
+
+        uint incomePercent= getProfit.percent;
+
+        uint calcPercent = (incomePercent * tokenBought) / 100;
+
+        uint amounttoPay = calcPercent + amountDeposited;
+
+        _paymentToken.transferFrom(address(this), _investorAddr, amounttoPay);
+
+
+
+    }
 
     /**
      * To check The investment created by the investor
