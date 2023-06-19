@@ -39,7 +39,7 @@ contract TokenGrow is ERC20 {
         uint totalAmount;
         // amount withdraw
         uint amountWithdraw;
-        //Amount paid back by investor 
+        //Amount paid back by investor
         uint amountDeposited;
         mapping(address => uint) amountInvested;
         // Token purchased by the investor
@@ -49,7 +49,7 @@ contract TokenGrow is ERC20 {
     mapping(uint => Investment) public investment;
     //to keep track of the total invetmentId in the contract
     uint[] public tokenIds;
-//to keep track of all the investment created by each address
+    //to keep track of all the investment created by each address
     mapping(address => uint[]) _totalInvestmentCreated;
 
     // to keep track of each investors investment Id
@@ -58,6 +58,7 @@ contract TokenGrow is ERC20 {
     /**
      *function to create Investment
      *Each token minted is equated to 1$
+     *Minted token shows the total investment rate at the percentage said
      */
     function createInvestment(
         uint256 _tokenId,
@@ -70,6 +71,7 @@ contract TokenGrow is ERC20 {
         if (_nftCollection.balanceOf(msg.sender) < 0) revert();
         if (_nftCollection.ownerOf(_tokenId) != _owner) revert();
 
+        //to save the specific Id
         uint tokenIdSave = tokenIds.length;
         _nftCollection.safeTransferFrom(msg.sender, address(this), _tokenId);
 
@@ -80,8 +82,22 @@ contract TokenGrow is ERC20 {
         newInvestment.percent = _percent;
         newInvestment.tokenAmount = _tokenAmount;
         newInvestment.endInvestmentPeriod = _investmentEndTime;
+        newInvestment.tokenLeft = _tokenAmount;
 
         tokenIds.push(tokenIdSave);
+        _totalInvestmentCreated[_owner].push(tokenIdSave);
+    }
+
+    /**
+    * Start your investment
+    */ 
+    function startInvestment(uint _investmentId, address _investmentOwner) public{
+        if(msg.sender != _investmentOwner ) revert();
+          Investment storage startInvest = investment[
+            _investmentId];
+            if(_investmentOwner != startInvest.investmentOwner) revert();
+            startInvest.startInvestmentPeriod = block.timestamp;
+
     }
 
     /**
@@ -143,7 +159,8 @@ contract TokenGrow is ERC20 {
         uint _amount,
         uint _investmentId,
         address _priceFeedAddr,
-        address _investor
+        address _investor,
+        uint _amountToPay
     ) public {
         if (msg.sender != _investor) revert();
         Investment storage purchaseInvestment = investment[_investmentId];
@@ -155,13 +172,17 @@ contract TokenGrow is ERC20 {
 
         uint amounttoPurchase = uint(currentPrice) * _amount;
 
-        if (amounttoPurchase > purchaseInvestment.tokenLeft) revert();
+        if(_amountToPay != amounttoPurchase) revert();
+        if (_amount > purchaseInvestment.tokenLeft) revert();
         _paymentToken.transfer(address(this), amounttoPurchase);
 
         purchaseInvestment.amountInvested[_investor] = amounttoPurchase;
         purchaseInvestment.tokenPurchased[_investor] = _amount;
         purchaseInvestment.totalAmount += amounttoPurchase;
+        purchaseInvestment.tokenSold += _amount;
+        purchaseInvestment.tokenLeft -= _amount;
         _myInvestmentId[_investor].push(_investmentId);
+        _mint(_investor, _amount);
     }
 
     /**
@@ -191,42 +212,135 @@ contract TokenGrow is ERC20 {
     /**
      * To withdraw the investment of each users
      */
-    function withDrawInvestment(uint _investmentId, address _investorAddr) public {
-        if(_investorAddr != msg.sender) revert();
+    function withDrawInvestment(
+        uint _investmentId,
+        address _investorAddr
+    ) public {
+        if (_investorAddr != msg.sender) revert();
 
         Investment storage getProfit = investment[_investmentId];
-        
-        if(block.timestamp != getProfit.endInvestmentPeriod) revert();
+
+        if (block.timestamp != getProfit.endInvestmentPeriod) revert();
 
         uint amountDeposited = getProfit.amountInvested[_investorAddr];
         uint tokenBought = getProfit.tokenPurchased[_investorAddr];
-        if(amountDeposited == 0) revert(); 
-        if(tokenBought == 0) revert(); 
-        if(getProfit.amountDeposited == 0) revert();
-        uint incomePercent= getProfit.percent;
+        if (amountDeposited == 0) revert();
+        if (tokenBought == 0) revert();
+        if (getProfit.amountDeposited == 0) revert();
+        uint incomePercent = getProfit.percent;
 
         uint calcPercent = (incomePercent * tokenBought) / 100;
 
         uint amounttoPay = calcPercent + amountDeposited;
 
         _paymentToken.transferFrom(address(this), _investorAddr, amounttoPay);
-         getProfit.amountInvested[_investorAddr] = 0;
-         getProfit.tokenPurchased[_investorAddr] = 0;
-         _burn(_investorAddr, tokenBought);
+        getProfit.amountInvested[_investorAddr] = 0;
+        getProfit.tokenPurchased[_investorAddr] = 0;
+        _burn(_investorAddr, tokenBought);
     }
 
     /**
      * To check The investment created by the investor
      */
-     function checkCreatorInvestment() public returns(uint[] memory, uint[] memory, uint[] memory, uint[] memory, uint[] memory, uint[] memory){
+    function checkCreatorInvestment(
+        address _creatorAddr
+    )
+        public
+        view
+        returns (
+            uint[] memory,
+            uint[] memory,
+            uint[] memory,
+            uint[] memory,
+            uint[] memory,
+            uint[] memory,
+            uint[] memory
+        )
+    {
+        if (msg.sender != _creatorAddr) revert();
+        uint[] memory creatorIds = _totalInvestmentCreated[_creatorAddr];
 
-     }
+        uint[] memory _tokenId = new uint[](creatorIds.length);
+        uint[] memory _percent = new uint[](creatorIds.length);
+        uint[] memory _tokenAmount = new uint[](creatorIds.length);
+        uint[] memory _tokenSold = new uint[](creatorIds.length);
+        uint[] memory _endPeriod = new uint[](creatorIds.length);
+        uint[] memory _amountwithdraw = new uint[](creatorIds.length);
+        uint[] memory _amountDeposited = new uint[](creatorIds.length);
+
+        for (uint i = 0; i < creatorIds.length; i++) {
+            uint creatorId = creatorIds[i];
+
+            Investment storage investmentData = investment[creatorId];
+            _tokenId[i] = investmentData.tokenId;
+            _tokenAmount[i] = investmentData.tokenAmount;
+            _tokenSold[i] = investmentData.tokenSold;
+            _endPeriod[i] = investmentData.endInvestmentPeriod;
+            _amountwithdraw[i] = investmentData.amountWithdraw;
+            _amountDeposited[i] = investmentData.amountDeposited;
+        }
+        return (
+            _tokenId,
+            _percent,
+            _tokenAmount,
+            _tokenSold,
+            _endPeriod,
+            _amountwithdraw,
+            _amountDeposited
+        );
+    }
 
     /**
-     * To withdraw The Money deposited by the investor for the business
+     * To withdraw The Money deposited by the investors for the business
      */
 
-     /**
+    function withdrawtheInvestment(
+        address _investmentOwner,
+        uint _investmentId,
+        uint withdraw
+    ) public {
+        if (msg.sender != _investmentOwner) revert();
+        Investment storage fundWithdraw = investment[_investmentId];
+        if (_investmentOwner != fundWithdraw.investmentOwner) revert();
+        if (fundWithdraw.totalAmount == fundWithdraw.amountWithdraw) revert();
+        if ((withdraw + fundWithdraw.amountWithdraw) > fundWithdraw.totalAmount)
+            revert();
+
+        fundWithdraw.amountWithdraw += withdraw;
+
+        _paymentToken.transferFrom(address(this), _investmentOwner, withdraw);
+    }
+
+    /**
+     *Amount to pay back
+     */
+    function payBack(
+        uint _investmentId,
+        address _investmentOwner
+    ) public view returns (uint) {
+        if (msg.sender != _investmentOwner) revert();
+
+        Investment storage getFee = investment[_investmentId];
+        if(_investmentOwner != getFee.investmentOwner) revert();
+        uint _percent = getFee.percent;
+        uint amount = getFee.totalAmount;
+
+        uint rate = (amount * _percent) / 100;
+        uint total = rate + amount;
+        return total;
+    }
+
+    /**
      *To return the money wihdraw by the investor and the interest
      */
+
+    function returnFundWithInterest(uint _investmentId, address _investmentOwner, uint _amount) public {
+        uint amountToPay = payBack(_investmentId, _investmentOwner);
+        if(_amount != amountToPay) revert();
+        _paymentToken.transfer(address(this), amountToPay);
+         Investment storage getFee = investment[_investmentId];
+         getFee.amountDeposited += amountToPay;
+
+
+    }
 }
