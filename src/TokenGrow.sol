@@ -49,6 +49,8 @@ contract TokenGrow is ERC20 {
     mapping(uint => Investment) public investment;
     //to keep track of the total invetmentId in the contract
     uint[] public tokenIds;
+//to keep track of all the investment created by each address
+    mapping(address => uint[]) _totalInvestmentCreated;
 
     // to keep track of each investors investment Id
     mapping(address => uint[]) _myInvestmentId;
@@ -216,6 +218,9 @@ contract TokenGrow is ERC20 {
     /**
      * To check The investment created by the investor
      */
+     function checkCreatorInvestment() public returns(uint[] memory, uint[] memory, uint[] memory, uint[] memory, uint[] memory, uint[] memory){
+
+     }
 
     /**
      * To withdraw The Money deposited by the investor for the business
