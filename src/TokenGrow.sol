@@ -39,6 +39,8 @@ contract TokenGrow is ERC20 {
         uint totalAmount;
         // amount withdraw
         uint amountWithdraw;
+        //Amount paid back by investor 
+        uint amountDeposited;
         mapping(address => uint) amountInvested;
         // Token purchased by the investor
         mapping(address => uint) tokenPurchased;
@@ -188,10 +190,17 @@ contract TokenGrow is ERC20 {
      * To withdraw the investment of each users
      */
     function withDrawInvestment(uint _investmentId, address _investorAddr) public {
+        if(_investorAddr != msg.sender) revert();
+
         Investment storage getProfit = investment[_investmentId];
+        
+        if(block.timestamp != getProfit.endInvestmentPeriod) revert();
+
         uint amountDeposited = getProfit.amountInvested[_investorAddr];
         uint tokenBought = getProfit.tokenPurchased[_investorAddr];
-
+        if(amountDeposited == 0) revert(); 
+        if(tokenBought == 0) revert(); 
+        if(getProfit.amountDeposited == 0) revert();
         uint incomePercent= getProfit.percent;
 
         uint calcPercent = (incomePercent * tokenBought) / 100;
@@ -199,9 +208,9 @@ contract TokenGrow is ERC20 {
         uint amounttoPay = calcPercent + amountDeposited;
 
         _paymentToken.transferFrom(address(this), _investorAddr, amounttoPay);
-
-
-
+         getProfit.amountInvested[_investorAddr] = 0;
+         getProfit.tokenPurchased[_investorAddr] = 0;
+         _burn(_investorAddr, tokenBought);
     }
 
     /**
