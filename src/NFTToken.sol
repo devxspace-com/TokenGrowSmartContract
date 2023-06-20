@@ -6,10 +6,10 @@ import "openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorag
 import "openzeppelin-contracts/contracts/utils/Counters.sol";
 
 contract NFTToken is ERC721, ERC721URIStorage {
-    using Counters for Counters.Counter;
+    // using Counters for Counters.Counter;
 
-    Counters.Counter private _tokenIdCounter;
-
+    // Counters.Counter private _tokenIdCounter;
+    uint _tokenIdCounter;
     constructor(
         string memory _tokenName,
         string memory _tokenSymbol
@@ -17,9 +17,10 @@ contract NFTToken is ERC721, ERC721URIStorage {
 
     function mintNFT(address _to, string memory _uri) public {
         if (msg.sender != _to) revert();
-        uint256 tokenId = _tokenIdCounter.current();
+        uint256 tokenId = _tokenIdCounter;
         _safeMint(_to, tokenId);
         _setTokenURI(tokenId, _uri);
+        _tokenIdCounter +=1;
     }
     
 
