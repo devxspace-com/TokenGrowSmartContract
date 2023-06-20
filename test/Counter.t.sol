@@ -2,14 +2,13 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/Counter.sol";
 import "../src/NFTToken.sol";
 import "../src/GetPriceFeed.sol";
 import "../src/TokenGrow.sol";
 import "./utils/Token.sol";
 
 contract CounterTest is Test {
-    Counter public counter;
+    
     NFTToken public nft;
     GetPriceFeed public priceFeed;
     TokenGrow public tokenGrow;
@@ -22,8 +21,7 @@ contract CounterTest is Test {
 
 
     function setUp() public {
-        counter = new Counter();
-        counter.setNumber(0);
+      
 
         nft = new NFTToken("Token_grow", "TG");
 
@@ -103,10 +101,7 @@ tokenGrow.withDrawInvestment(1, _nonso);
 
 
 
-    function testIncrement() public {
-        counter.increment();
-        assertEq(counter.number(), 1);
-    }
+   
 
 
 }
