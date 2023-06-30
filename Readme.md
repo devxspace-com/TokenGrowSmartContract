@@ -10,7 +10,13 @@ This documentation provides an overview of the Token_Grow smart contract, its fu
 
 The Token_Grow smart contract is implemented in Solidity and follows the ERC20 standard. It extends the ERC20 contract from the OpenZeppelin library and also interacts with the ERC721 contract. The contract uses the `Counters` library for generating unique investment IDs.
 
-Contract address: [CONTRACT_ADDRESS]
+## Contract address: 
+[0x7d23ad726af604de5bd9cd2fba9030f6a45185b6]
+
+## deployment
+
+https://testnet.ftmscan.com/address/0xee40081bb47be32fc6ffb810b26ceacc8d40b2b1
+
 
 ## Contract Structure
 
