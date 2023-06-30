@@ -1,0 +1,19 @@
+{
+  "name": "tokengrowsmartcontract",
+  "version": "1.0.0",
+  "description": "",
+  "main": "createaccount.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hashgraph/sdk": "^2.27.0"
+  }
+}

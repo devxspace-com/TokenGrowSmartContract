@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.18;
 
-import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
-import "openzeppelin-contracts/contracts/utils/Counters.sol";
+import "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import "../lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import "../lib/openzeppelin-contracts/contracts/utils/Counters.sol";
 import {GetPriceFeed} from "./GetPriceFeed.sol";
 
 contract TokenGrow is ERC20 {
