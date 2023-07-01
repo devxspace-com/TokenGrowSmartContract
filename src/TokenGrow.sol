@@ -2,12 +2,16 @@
 
 pragma solidity ^0.8.18;
 
-import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
-import "openzeppelin-contracts/contracts/utils/Counters.sol";
+import "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import "lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import "lib/openzeppelin-contracts/contracts/utils/Counters.sol";
+import "lib/openzeppelin-contracts/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import "forge-std/console.sol";
+
 import {GetPriceFeed} from "./GetPriceFeed.sol";
 
-contract TokenGrow is ERC20 {
+contract TokenGrow is ERC20, ERC721Holder, Ownable {
     using Counters for Counters.Counter;
 
     Counters.Counter private _investmentCounter;
@@ -28,6 +32,7 @@ contract TokenGrow is ERC20 {
 
     struct Investment {
         address investmentOwner;
+        //mapping index
         uint idInv;
         uint tokenId;
         uint percent;
@@ -48,6 +53,8 @@ contract TokenGrow is ERC20 {
         mapping(address => uint) tokenPurchased;
     }
 
+    uint256 public processingFee;
+
     mapping(uint => Investment) public investment;
     //to keep track of the total invetmentId in the contract
     uint[] public tokenIds;
@@ -57,6 +64,12 @@ contract TokenGrow is ERC20 {
     // to keep track of each investors investment Id
     mapping(address => uint[]) _myInvestmentId;
 
+    /**
+    *function to set processing Fee
+    */
+    function setProcessingFee (uint _fee) public onlyOwner{
+        processingFee = _fee;
+    }
     /**
      *function to create Investment
      *Each token minted is equated to 1$
@@ -76,7 +89,7 @@ contract TokenGrow is ERC20 {
         //to save the specific Id
         uint tokenIdSave = tokenIds.length;
 
-        _nftCollection.transferFrom(_owner, address(this), _tokenId);
+        _nftCollection.safeTransferFrom(_owner, address(this), _tokenId);
 
         Investment storage newInvestment = investment[_id];
         newInvestment.tokenId = _tokenId;
@@ -135,7 +148,8 @@ contract TokenGrow is ERC20 {
         uint[] memory tokenAmounts = new uint[](length);
         uint[] memory tokenSolds = new uint[](length);
         // uint[] memory tokenLefts = new uint[](length);
-        uint[] memory startInvestmentPeriods = new uint[](length);
+        // uint[] memory startInvestmentPeriods = new uint[](length);
+        uint[] memory totalInvestors = new uint[](length);
         uint[] memory endInvestmentPeriods = new uint[](length);
 
         for (uint i = 0; i < length; i++) {
@@ -148,7 +162,8 @@ contract TokenGrow is ERC20 {
             tokenAmounts[i] = currentInvestment.tokenAmount;
             tokenSolds[i] = currentInvestment.tokenSold;
             // tokenLefts[i] = currentInvestment.tokenLeft;
-            startInvestmentPeriods[i] = currentInvestment.startInvestmentPeriod;
+            // startInvestmentPeriods[i] = currentInvestment.startInvestmentPeriod;
+            totalInvestors[i] = currentInvestment.totalInvestors;
             endInvestmentPeriods[i] = currentInvestment.endInvestmentPeriod;
         }
 
@@ -159,7 +174,8 @@ contract TokenGrow is ERC20 {
             tokenAmounts,
             tokenSolds,
             // tokenLefts,
-            startInvestmentPeriods,
+            // startInvestmentPeriods,
+            totalInvestors,
             endInvestmentPeriods
         );
     }
@@ -185,17 +201,21 @@ contract TokenGrow is ERC20 {
         // uint amounttoPurchase = uint(currentPrice) * _amount;
 
         // if(_amountToPay != amounttoPurchase) revert();
-        if (_amount > purchaseInvestment.tokenLeft) revert();
+        uint _fee = (_amount * processingFee )/100;
+        uint leftAmount = _amount- _fee;
+        uint purchases = leftAmount/1e18;
+        console.log(purchases);
+        if (purchases > purchaseInvestment.tokenLeft) revert();
 
         _paymentToken.transferFrom(_investor, address(this), _amount);
-
-        purchaseInvestment.amountInvested[_investor] = _amount;
-        purchaseInvestment.tokenPurchased[_investor] = _amount;
-        purchaseInvestment.totalAmount += _amount;
-        purchaseInvestment.tokenSold += _amount;
-        purchaseInvestment.tokenLeft -= _amount;
+        purchaseInvestment.amountInvested[_investor] += leftAmount;
+        purchaseInvestment.tokenPurchased[_investor] += purchases;
+        console.log( purchaseInvestment.tokenPurchased[_investor]);
+        purchaseInvestment.totalAmount += leftAmount;
+        purchaseInvestment.tokenSold += purchases;
+        purchaseInvestment.tokenLeft -= purchases;
         _myInvestmentId[_investor].push(_investmentId);
-        _mint(_investor, _amount);
+        _mint(_investor, purchases);
     }
 
     /**
@@ -209,15 +229,17 @@ contract TokenGrow is ERC20 {
         view
         returns (uint[] memory, uint[] memory, uint[] memory, uint[] memory)
     {
-        if (msg.sender != _address) revert("you are not the owner");
+        // if (msg.sender != _address) revert("you are not the owner");
         // require(_address == msg.sender , );
 
         uint[] memory investmentIds = _myInvestmentId[_address];
 
         uint[] memory totalAmountInvested = new uint[](investmentIds.length);
-        uint[] memory totalTokenPurchased = new uint[](investmentIds.length);
+        // uint[] memory totalTokenPurchased = new uint[](investmentIds.length);
         uint[] memory invId = new uint[](investmentIds.length);
         uint[] memory nftId = new uint[](investmentIds.length);
+        uint[] memory endPeriod = new uint[](investmentIds.length);
+        
 
         for (uint i = 0; i < investmentIds.length; i++) {
             uint investmentId = investmentIds[i];
@@ -225,14 +247,28 @@ contract TokenGrow is ERC20 {
             Investment storage investmentData = investment[investmentId];
 
             totalAmountInvested[i] = investmentData.amountInvested[_address];
-            totalTokenPurchased[i] = investmentData.amountInvested[_address];
             invId[i] = investmentData.idInv;
             nftId[i] = investmentData.tokenId;
+            endPeriod[i] = investmentData.endInvestmentPeriod;
+            // startPeriod[i] = investmentData.startInvestmentPeriod;
         }
 
-        return (invId, nftId, totalAmountInvested, totalTokenPurchased);
+        return (invId, nftId, totalAmountInvested, endPeriod);
     }
 
+/**
+*get profit
+*/ 
+function getProfitWithTime(uint _investmentId, address _address) public view returns(uint income, uint start){
+    Investment storage profit = investment[_investmentId];
+    uint percent = profit.percent;
+   uint investAmount = profit.amountInvested[_address];
+   start = profit.startInvestmentPeriod;
+   income = (percent * investAmount)/100;
+   
+
+
+} 
     /**
      * To withdraw the investment of each users
      */
@@ -260,7 +296,7 @@ contract TokenGrow is ERC20 {
 
         uint amounttoPay = calcPercent + _amountDeposited;
 
-        _paymentToken.transfer( _investorAddr, amounttoPay);
+        _paymentToken.transfer(_investorAddr, amounttoPay);
         getProfit.amountInvested[_investorAddr] = 0;
         getProfit.tokenPurchased[_investorAddr] = 0;
         _burn(_investorAddr, tokenBought);
@@ -332,14 +368,16 @@ contract TokenGrow is ERC20 {
     ) public {
         if (msg.sender != _investmentOwner) revert("NOT_OWNER");
         Investment storage fundWithdraw = investment[_investmentId];
-        if (_investmentOwner != fundWithdraw.investmentOwner) revert('NOT_INVESTMENT_OWNER');
-        if (fundWithdraw.totalAmount == fundWithdraw.amountWithdraw) revert("NO_AMOUNT_LEFT_TO_WITHDRAW");
+        if (_investmentOwner != fundWithdraw.investmentOwner)
+            revert("NOT_INVESTMENT_OWNER");
+        if (fundWithdraw.totalAmount == fundWithdraw.amountWithdraw)
+            revert("NO_AMOUNT_LEFT_TO_WITHDRAW");
         if ((withdraw + fundWithdraw.amountWithdraw) > fundWithdraw.totalAmount)
             revert("YOU_CANT_WITHDRAW_THIS_MUCH");
 
         fundWithdraw.amountWithdraw += withdraw;
 
-        _paymentToken.transfer( _investmentOwner, withdraw);
+        _paymentToken.transfer(_investmentOwner, withdraw);
     }
 
     /**
@@ -352,7 +390,8 @@ contract TokenGrow is ERC20 {
         if (msg.sender != _investmentOwner) revert("INCORRECT_ADDRESS");
 
         Investment storage getFee = investment[_investmentId];
-        if (_investmentOwner != getFee.investmentOwner) revert("NOT_INVESTMENT_OWNER");
+        if (_investmentOwner != getFee.investmentOwner)
+            revert("NOT_INVESTMENT_OWNER");
         uint _percent = getFee.percent;
         uint amount = getFee.totalAmount;
 
@@ -372,7 +411,11 @@ contract TokenGrow is ERC20 {
     ) public {
         uint amountToPay = payBack(_investmentId, _investmentOwner);
         if (_amount != amountToPay) revert("PAY_THE_CORRECT_AMOUNT");
-        _paymentToken.transferFrom(_investmentOwner, address(this), amountToPay);
+        _paymentToken.transferFrom(
+            _investmentOwner,
+            address(this),
+            amountToPay
+        );
         Investment storage getFee = investment[_investmentId];
         getFee.amountDeposited += amountToPay;
     }

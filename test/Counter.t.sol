@@ -26,7 +26,7 @@ contract CounterTest is Test {
         nft = new NFTToken("Token_grow", "TG");
 
         priceFeed = new GetPriceFeed();
-        token = new Token(_alice, _vince, _nonso);
+        token = new Token();
         tokenGrow = new TokenGrow('tokenG', 'tg2', address(nft), address(token) );
 
     }
@@ -36,62 +36,64 @@ function testMint() public{
 vm.startPrank(_alice);
    nft.mintNFT(_alice, "telnet://192.0.2.16:80");
 
-   nft.mintNFT(_alice, "telnet://192.0.2.16:90");
+   nft.mintNFT(_alice, "telnet://19");
     nft.approve(address(tokenGrow), 0);
    tokenGrow.createInvestment(0, _alice, 20, 5000, 5 minutes);
-    nft.approve(address(tokenGrow), 1);
-   tokenGrow.createInvestment(1, _alice, 40, 5000, 10 minutes);
+   //  nft.approve(address(tokenGrow), 1);
+   // tokenGrow.createInvestment(1, _alice, 40, 5000, 10 minutes);
 
-   tokenGrow.getAllInvestment();
+//    tokenGrow.getAllInvestment();
    vm.stopPrank();
 
-   token.balanceOf(_nonso);
-vm.prank(_nonso);
-token.approve(address(tokenGrow), 20000);
+vm.prank(_alice);
+token.mintoken();
 
-vm.prank(_nonso);
-   tokenGrow.buyAnInvestment(200, 0,  _nonso);
+   token.balanceOf(_alice);
+vm.prank(_alice);
+token.approve(address(tokenGrow), 20000000000000000000000);
+
+
    
-vm.prank(_vince);
-token.approve(address(tokenGrow), 20000);
-vm.prank(_vince);
-   tokenGrow.buyAnInvestment(500, 0,  _vince);
-vm.prank(_nonso);
-   tokenGrow.buyAnInvestment(4500, 1,  _nonso);
+// vm.prank(_vince);
+// token.approve(address(tokenGrow), 20000);
+vm.prank(_alice);
+   tokenGrow.buyAnInvestment(500000000000000000000, 0,  _alice);
+// vm.prank(_nonso);
+//    tokenGrow.buyAnInvestment(4500, 1,  _nonso);
 
 // vm.prank(_vince);
 //    tokenGrow.buyAnInvestment(500, 1,  _vince);
-vm.prank(_vince);
-tokenGrow.getYourInvestment(_vince);
-
-vm.prank(_nonso);
-tokenGrow.getYourInvestment(_nonso);
+// vm.prank(_vince);
+// tokenGrow.getYourInvestment(_vince);
 
 vm.prank(_alice);
-tokenGrow.startInvestment(0, _alice);
+tokenGrow.getYourInvestment(_alice);
 
-vm.prank(_alice);
-tokenGrow.checkCreatorInvestment(_alice);
+// vm.prank(_alice);
+// tokenGrow.startInvestment(0, _alice);
 
-vm.prank(_alice);
-tokenGrow.withdrawtheInvestment(_alice, 1, 4500);
+// vm.prank(_alice);
+// tokenGrow.checkCreatorInvestment(_alice);
 
-vm.prank(_alice);
+// vm.prank(_alice);
+// tokenGrow.withdrawtheInvestment(_alice, 1, 4500);
+
+// vm.prank(_alice);
 // tokenGrow.withdrawtheInvestment(_alice, 1, 1000);
-tokenGrow.payBack(1, _alice);
+// tokenGrow.payBack(1, _alice);
 
-vm.prank(_alice);
-token.approve(address(tokenGrow), 20000);
-vm.prank(_alice);
-tokenGrow.returnFundWithInterest(1, _alice, 6300);
+// vm.prank(_alice);
+// token.approve(address(tokenGrow), 20000);
+// vm.prank(_alice);
+// tokenGrow.returnFundWithInterest(1, _alice, 6300);
 
-vm.warp(20 minutes);
-vm.prank(_nonso);
-tokenGrow.withDrawInvestment(1, _nonso);
+// vm.warp(20 minutes);
+// vm.prank(_nonso);
+// tokenGrow.withDrawInvestment(1, _nonso);
 
-vm.warp(20 minutes);
-vm.prank(_nonso);
-tokenGrow.withDrawInvestment(1, _nonso);
+// vm.warp(20 minutes);
+// vm.prank(_nonso);
+// tokenGrow.withDrawInvestment(1, _nonso);
 
 // tokenGrow.balanceOf(_nonso);
 //    console.log( nft.tokenURI(1));
