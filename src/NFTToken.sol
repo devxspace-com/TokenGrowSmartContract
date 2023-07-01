@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.18;
+<<<<<<< HEAD
 import "lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import "lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "lib/openzeppelin-contracts/contracts/utils/Counters.sol";
+=======
+import "../lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import "../lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "../lib/openzeppelin-contracts/contracts/utils/Counters.sol";
+>>>>>>> 85ca12f45bea735ac3d0ed3eb9b8ac08c46e6ee7
 
 contract NFTToken is ERC721, ERC721URIStorage {
     // using Counters for Counters.Counter;
